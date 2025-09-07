@@ -17,6 +17,10 @@ RUN crontab /etc/cron.d/update
 # Update motd
 COPY motd/welcome /etc/motd
 
+# Include useful scripts
+COPY etc/ydl.sh ~/ydl.sh
+COPY etc/myip.sh ~/myip.sh
+
 # Ensure cron is running, see:
 # https://stackoverflow.com/questions/37458287/how-to-run-a-cron-job-inside-a-docker-container
 CMD ["/usr/sbin/crond", "-f", "-d", "0"]
