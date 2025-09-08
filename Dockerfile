@@ -2,7 +2,7 @@ FROM lscr.io/linuxserver/openssh-server:latest
 MAINTAINER ckeefer keefer@sanemethod.com
 
 # Install yt-dlp and dependencies
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_musllinux -o /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/yt-dlp
 RUN apk add ffmpeg
 RUN apk add python3
