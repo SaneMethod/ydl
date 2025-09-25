@@ -1,0 +1,19 @@
+# YT-DLP Config
+
+# See https://github.com/lexiforest/curl-impersonate
+--impersonate "chrome:windows-10"
+
+# No caching to file system
+--no-cache-dir
+
+# Remove 8bit-unsafe filenames
+--restrict-filenames
+
+# Do not use the Last-modified header to set the file modification time
+--no-mtime
+
+# Make all connections via IPv4
+--force-ipv4
+
+# Set JS Runtimes (see: https://github.com/yt-dlp/yt-dlp/issues/14404)
+--js-runtimes bun

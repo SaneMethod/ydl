@@ -40,13 +40,13 @@ while [ "$1" != "" ]; do
 done
 
 if [ "$as_url" == true ]; then
-  yt-dlp --force-ipv4 -f bestaudio/best -g -e "$(printf "%s" "$url")"
+  yt-dlp -f bestaudio/best -g -e "$(printf "%s" "$url")"
   exit 0
 fi
 
 if [ "$as_video" == true ]; then
    cd /media/Video/Downloads/ || exit
-   yt-dlp --force-ipv4 --no-cache-dir --impersonate "chrome:windows-10" --format bestaudio+bestvideo "$(printf "%s" "$url")"
+   yt-dlp --format bestaudio+bestvideo "$(printf "%s" "$url")"
    exit 0
 fi
 
@@ -57,11 +57,11 @@ if [ "$is_playlist" == true ]; then
   cd "$pl_dir" || exit
   yt-dlp --rm-cache-dir
 
-  yt-dlp --force-ipv4 -x --yes-playlist --playlist-start "$(printf "%s" "$start_index")" --audio-format "$(printf "%s" "$format")" --audio-quality 0 -o "$(printf "%s" "$filename_template")" --no-mtime --restrict-filenames --format bestaudio "$(printf "%s" "$url")"
+  yt-dlp -x --yes-playlist --playlist-start "$(printf "%s" "$start_index")" --audio-format "$(printf "%s" "$format")" --audio-quality 0 -o "$(printf "%s" "$filename_template")" --format bestaudio "$(printf "%s" "$url")"
   exit 0
 fi
 
 cd /media/Music/Downloads/ || exit
-yt-dlp --force-ipv4 --no-cache-dir -x --audio-format "$(printf "%s" "$format")" --audio-quality 0 -o "$(printf "%s" "$filename_template")" --no-mtime --restrict-filenames --cookies ./"$cookies" --format bestaudio "$(printf "%s" "$url")"
+yt-dlp -x --audio-format "$(printf "%s" "$format")" --audio-quality 0 -o "$(printf "%s" "$filename_template")" --cookies ./"$cookies" --format bestaudio "$(printf "%s" "$url")"
 
 
