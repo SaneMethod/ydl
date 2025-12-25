@@ -15,6 +15,16 @@ RUN apk add git
 # Install bun
 COPY --from=oven/bun:alpine /usr/local/bin/bun /usr/local/bin/bun
 
+# Install UV and Audible CLI
+RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-musl.tar.gz -o /usr/local/bin/uv.tar.gz
+RUN tar -xzf /usr/local/bin/uv.tar.gz -C /usr/local/bin/
+RUN mv /usr/local/bin/uv-x86_64-unknown-linux-musl/* /usr/local/bin/
+RUN chmod a+rx /usr/local/bin/uv
+RUN rm /usr/local/bin/uv.tar.gz
+RUN rm -rf /usr/local/bin/uv-x86_64-unknown-linux-musl
+RUN uv tool install audible-cli
+RUN echo 'export PATH="$PATH:/config/.local/bin"' | tee -a /etc/profile
+
 # Copy yt-dlp config file
 COPY config/config /etc/yt-dlp/config
 
