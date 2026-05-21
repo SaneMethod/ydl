@@ -1,28 +1,73 @@
-FROM lscr.io/linuxserver/openssh-server:latest
-MAINTAINER ckeefer keefer@sanemethod.com
+FROM debian:stable-slim
+LABEL maintainer="ckeefer keefer@sanemethod.com"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install necessary packages to match linuxserver/openssh-server
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssh-server \
+    curl \
+    sudo \
+    ca-certificates \
+    gnupg2 \
+    cron \
+    ffmpeg \
+    python3 \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up environment variables to match linuxserver/openssh-server parameters
+ENV PUID=1000 \
+    PGID=1000 \
+    TZ=Etc/UTC \
+    USER_NAME=linuxserver.io \
+    PUBLIC_KEY="" \
+    PUBLIC_KEY_FILE=/config/.ssh/authorized_keys \
+    PUBLIC_KEY_DIR=/config/.ssh/keys \
+    PUBLIC_KEY_URL="" \
+    SUDO_ACCESS=false \
+    PASSWORD_ACCESS=false \
+    USER_PASSWORD="" \
+    USER_PASSWORD_FILE=""
+
+# Create necessary directories
+RUN mkdir -p /config /var/run/sshd /run/sshd
+
+# Add entrypoint script to handle PUBLIC_KEY
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Configure SSH
+RUN sed -i 's/^#*Port .*/Port 2222/' /etc/ssh/sshd_config \
+    && grep -q '^Port 2222' /etc/ssh/sshd_config || echo "Port 2222" >> /etc/ssh/sshd_config \
+    && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config \
+    && grep -q '^PermitRootLogin no' /etc/ssh/sshd_config || echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+
+# Install bento4
+RUN curl -L -o /tmp/bento4.zip https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip \
+    && unzip /tmp/bento4.zip -d /tmp/bento4 \
+    && mv /tmp/bento4/Bento4-SDK-1-6-0-641.x86_64-unknown-linux/bin/* /usr/local/bin/ \
+    && rm -rf /tmp/bento4 /tmp/bento4.zip \
+    && chmod +x /usr/local/bin/*
+
+EXPOSE 2222
 
 # Install yt-dlp and dependencies
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_musllinux -o /usr/local/bin/yt-dlp
-RUN chmod a+rx /usr/local/bin/yt-dlp
-RUN apk update
-RUN apk add gcompat libstdc++
-RUN apk add ffmpeg
-RUN apk add python3
-RUN apk add bento4
-RUN apk add bento4-dev
-RUN apk add git
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/bin/yt-dlp
+RUN chmod a+rx /usr/bin/yt-dlp
 
-# Install bun
-COPY --from=oven/bun:alpine /usr/local/bin/bun /usr/local/bin/bun
+# Install deno
+RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
+    && chmod a+rx /usr/local/bin/deno
 
-# Install UV and Audible CLI
-RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-musl.tar.gz -o /usr/local/bin/uv.tar.gz
-RUN tar -xzf /usr/local/bin/uv.tar.gz -C /usr/local/bin/
-RUN mv /usr/local/bin/uv-x86_64-unknown-linux-musl/* /usr/local/bin/
-RUN chmod a+rx /usr/local/bin/uv
-RUN rm /usr/local/bin/uv.tar.gz
-RUN rm -rf /usr/local/bin/uv-x86_64-unknown-linux-musl
-RUN uv tool install audible-cli
+# Install UV
+RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz -o /usr/bin/uv.tar.gz
+RUN tar -xzf /usr/bin/uv.tar.gz -C /usr/bin/
+RUN mv /usr/bin/uv-x86_64-unknown-linux-gnu/uv /usr/bin/
+RUN chmod a+rx /usr/bin/uv
+RUN rm /usr/bin/uv.tar.gz
+RUN rm -rf /usr/bin/uv-x86_64-unknown-linux-gnu
 RUN echo 'export PATH="$PATH:/config/.local/bin"' | tee -a /etc/profile
 
 # Copy yt-dlp config file
@@ -36,10 +81,7 @@ RUN crontab /etc/cron.d/update
 # Update motd
 COPY motd/welcome /etc/motd
 
-# Include useful scripts
-COPY etc/ydl.sh ~/ydl.sh
-COPY etc/myip.sh ~/myip.sh
-
 # Ensure cron is running, see:
 # https://stackoverflow.com/questions/37458287/how-to-run-a-cron-job-inside-a-docker-container
-CMD ["/usr/sbin/crond", "-f", "-d", "0"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["sh", "-c", "cron && /usr/sbin/sshd -D"]

@@ -16,4 +16,4 @@
 --force-ipv4
 
 # Set JS Runtimes (see: https://github.com/yt-dlp/yt-dlp/issues/14404)
---js-runtimes bun
+--js-runtimes deno
