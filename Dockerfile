@@ -15,6 +15,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     git \
     unzip \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libgbm1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libxshmfence1 \
+    libasound2 \
+    libatspi2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up environment variables to match linuxserver/openssh-server parameters
@@ -36,7 +51,12 @@ RUN mkdir -p /config /var/run/sshd /run/sshd
 
 # Add entrypoint script to handle PUBLIC_KEY
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY youtube-login.py /usr/local/bin/youtube-login.py
+COPY youtube-login.sh /usr/local/bin/youtube-login.sh
+RUN chmod 0755 \
+    /usr/local/bin/docker-entrypoint.sh \
+    /usr/local/bin/youtube-login.py \
+    /usr/local/bin/youtube-login.sh
 
 # Configure SSH
 RUN sed -i 's/^#*Port .*/Port 2222/' /etc/ssh/sshd_config \
@@ -70,13 +90,27 @@ RUN rm /usr/bin/uv.tar.gz
 RUN rm -rf /usr/bin/uv-x86_64-unknown-linux-gnu
 RUN echo 'export PATH="$PATH:/config/.local/bin"' | tee -a /etc/profile
 
+# Install browser automation and TOTP dependencies
+ENV YOUTUBE_LOGIN_VENV=/opt/youtube-login-venv
+RUN uv python install 3.13 \
+    && uv venv --python 3.13 "$YOUTUBE_LOGIN_VENV" \
+    && uv pip install \
+      --python "$YOUTUBE_LOGIN_VENV/bin/python" \
+      --no-cache \
+      playwright \
+      clark-browser \
+      cktotp \
+    && HOME=/root "$YOUTUBE_LOGIN_VENV/bin/clark-browser" fetch
+
 # Copy yt-dlp config file
 COPY config/config /etc/yt-dlp/config
 
 # Setup weekly update
 COPY cron/update /etc/cron.d/update
-RUN chmod 0644 /etc/cron.d/update
-RUN crontab /etc/cron.d/update
+COPY cron/youtube-login /etc/cron.d/youtube-login
+RUN chmod 0644 /etc/cron.d/update /etc/cron.d/youtube-login \
+    && crontab /etc/cron.d/update \
+    && crontab -l | cat - /etc/cron.d/youtube-login | crontab -
 
 # Update motd
 COPY motd/welcome /etc/motd

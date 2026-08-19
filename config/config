@@ -1,5 +1,8 @@
 # YT-DLP Config
 
+# Authentication cookies refreshed by /usr/local/bin/youtube-login.py
+--cookies "/config/youtube-cookies.txt"
+
 # See https://github.com/lexiforest/curl-impersonate
 --impersonate "chrome:windows-10"
 
