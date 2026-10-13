@@ -1,3 +1,4 @@
-# Refresh YouTube authentication cookies daily at 03:15.
+# Refresh YouTube authentication cookies twice daily at 03:15 and 21:33
 15 3 * * * /usr/local/bin/youtube-login.sh > /proc/1/fd/1 2>/proc/1/fd/2
+33 21 * * * /usr/local/bin/youtube-login.sh > /proc/1/fd/1 2>/proc/1/fd/2
 # An empty line is required at the end of this file for a valid cron file.

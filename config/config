@@ -20,3 +20,6 @@
 
 # Set JS Runtimes (see: https://github.com/yt-dlp/yt-dlp/issues/14404)
 --js-runtimes deno
+
+# Set path to PO Token provider script
+--extractor-args "youtubepot-bgutilscript:server_home=/usr/bin/pot/bgutil-ytdlp-pot-provider/server"

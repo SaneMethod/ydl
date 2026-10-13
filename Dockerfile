@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     python3 \
     git \
+    jq \
     unzip \
     libnss3 \
     libnspr4 \
@@ -89,6 +90,20 @@ RUN chmod a+rx /usr/bin/uv
 RUN rm /usr/bin/uv.tar.gz
 RUN rm -rf /usr/bin/uv-x86_64-unknown-linux-gnu
 RUN echo 'export PATH="$PATH:/config/.local/bin"' | tee -a /etc/profile
+
+# Install PO Token provider
+# See: https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+RUN LATEST_PO_RELEASE="$(curl -fsSL \
+      https://api.github.com/repos/Brainicism/bgutil-ytdlp-pot-provider/releases/latest \
+      | jq -r .tag_name)" &&  \
+    CWD=$(cd) &&  \
+    mkdir -p /usr/bin/pot &&  \
+    cd /usr/bin/pot &&  \
+    git clone --single-branch --branch "$LATEST_PO_RELEASE" https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git &&  \
+    cd bgutil-ytdlp-pot-provider/server/ && deno install --allow-scripts=npm:canvas --frozen && \
+    cd "$CWD"
+RUN mkdir -p /etc/yt-dlp/plugins
+RUN curl -L https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/latest/download/bgutil-ytdlp-pot-provider.zip -o /etc/yt-dlp/plugins/bgutil-ytdlp-pot-provider.zip
 
 # Install browser automation and TOTP dependencies
 ENV YOUTUBE_LOGIN_VENV=/opt/youtube-login-venv
